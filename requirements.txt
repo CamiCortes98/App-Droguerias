@@ -1,0 +1,6 @@
+Flask
+Gunicorn
+Pandas
+os
+render
+request
