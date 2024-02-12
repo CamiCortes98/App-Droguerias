@@ -34,29 +34,30 @@
     <form method="POST" action="/upload" enctype="multipart/form-data">
         <div class="form-group">
             <label for="barracas_csv">CSV Barracas:</label>
-            <button type="submit" class="btn btn-primary" name="submit_btn" value="barracas"><input type="file" class="form-control-file" id="barracas_csv" name="barracas_csv"></button>
-            
+            <input type="file" class="form-control-file" id="barracas_csv" name="barracas_csv">
         </div>
         <div class="form-group">
             <label for="cofarsur_csv">CSV Cofarsur:</label>
-            <button type="submit" class="btn btn-primary" name="submit_btn" value="cofarsur"><input type="file" class="form-control-file" id="cofarsur_csv" name="cofarsur_csv"></button>
-            
+            <input type="file" class="form-control-file" id="cofarsur_csv" name="cofarsur_csv">
         </div>
         <div class="form-group">
             <label for="sud_csv">CSV del Sud:</label>
-            <button type="submit" class="btn btn-primary" name="submit_btn" value="sud"> <input type="file" class="form-control-file" id="sud_csv" name="sud_csv"></button>
-           
+            <input type="file" class="form-control-file" id="sud_csv" name="sud_csv">
         </div>
         <div class="form-group">
             <label for="txt_file">Archivo TXT:</label>
-            
-            <button type="submit" class="btn btn-primary" name="submit_btn" value="txt"><input type="file" class="form-control-file" id="txt_file" name="txt_file"></button>
+            <input type="file" class="form-control-file" id="txt_file" name="txt_file">
         </div>
-        
-        <button class="btn btn-primary" type="submit">Cargar</button>
-        
-        
+        <button type="submit" class="btn btn-primary">Subir Archivos</button>
     </form>
+
+    <h2>Descargar Archivos</h2>
+    <ul>
+        <li><a href="/download/barracas.csv">Descargar CSV Barracas</a></li>
+        <li><a href="/download/cofarsur.csv">Descargar CSV Cofarsur</a></li>
+        <li><a href="/download/sud.csv">Descargar CSV del Sud</a></li>
+        <li><a href="/download/archivo.txt">Descargar Archivo TXT</a></li>
+    </ul>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
