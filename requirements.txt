@@ -1,5 +1,3 @@
 Flask
 Gunicorn
 Pandas
-render
-request
