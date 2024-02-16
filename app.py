@@ -54,7 +54,11 @@ def procesar_datos(archivos_csv, archivo_txt, entry_descuentos):
 
         mejor_opcion_filtrado = pd.merge(mejor_opcion, BaseTxt, on="Codigo", how="inner")
 
-        return mejor_opcion_filtrado.to_csv(index=False)
+        # Guardar el DataFrame como un archivo temporal
+        temp_file = os.path.join(app.config['UPLOAD_FOLDER'], 'resultado.csv')
+        mejor_opcion_filtrado.to_csv(temp_file, index=False)
+
+        return temp_file
     
     except Exception as e:
         return str(e)
@@ -80,7 +84,7 @@ def upload():
 
         resultado = procesar_datos(archivos_csv, archivo_txt, entry_descuentos)
 
-        return send_file(resultado, as_attachment=True, attachment_filename='resultado.csv')
+        return send_file(resultado, as_attachment=True)
     except Exception as e:
         return jsonify({'error': str(e)})
 
