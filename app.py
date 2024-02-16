@@ -33,7 +33,7 @@ def upload():
         apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'barracas.csv'), barracas_discount)  
     if cofarsur_csv:
         cofarsur_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur.csv'))
-        apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur_csv'), cofarsur_discount)
+        apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur.csv'), cofarsur_discount)
     if sud_csv:
         sud_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'sud.csv'))
         apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'sud.csv'), sud_discount)
