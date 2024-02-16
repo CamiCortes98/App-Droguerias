@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, send_file, jsonify
 import os
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -23,16 +24,29 @@ def upload():
     sud_csv = request.files.get('sud_csv')
     txt_file = request.files.get('txt_file')
 
+    barracas_discount = float(request.form.get('barracas_discount', 0)) / 100
+    cofarsur_discount = float(request.form.get('cofarsur_discount', 0)) / 100
+    sud_discount = float(request.form.get('sud_discount', 0)) / 100
+
     if barracas_csv:
         barracas_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'barracas.csv'))
+        apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'barracas.csv'), barracas_discount)  
     if cofarsur_csv:
         cofarsur_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur.csv'))
+        apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur_csv'), cofarsur_discount)
     if sud_csv:
         sud_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'sud.csv'))
+        apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'sud.csv'), sud_discount)
     if txt_file:
         txt_file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'archivo.txt'))
 
     return jsonify({'message': 'Archivos subidos exitosamente!'})
+
+def apply_discount(filepath, discount):
+    df = pd.read_csv(filepath)
+    if 'precios' in df.columns:
+        df['precios'] = df['precios'] * (1 - discount)
+        df.to_csv(filepath, index=False)
 
 @app.route('/download/<filename>', methods=['GET'])
 def download(filename):
