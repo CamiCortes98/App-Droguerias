@@ -13,6 +13,52 @@ def create_upload_folder():
 
 create_upload_folder()
 
+def procesar_datos(archivos_csv, archivo_txt, entry_descuentos):
+    try:
+        columnas = [1, 5, 6, 9]
+        dataframes = []
+
+        for nombre_df, archivo_csv in archivos_csv.items():
+            df = pd.read_csv(archivo_csv, sep=';', usecols=columnas, header=None, encoding='ISO-8859-1')
+            df.columns = ["Codigo", 'Nombre', "Gramaje", 'Precio']
+            df['Archivo'] = nombre_df  
+            df['Precio'] = df['Precio'] * (1 - entry_descuentos[nombre_df] / 100)
+            dataframes.append(df)
+
+        for df in dataframes:
+            df['Nombre Producto'] = df['Nombre'] + ' ' + df['Gramaje']
+
+        codigo_barras_unicos = set(dataframes[0]['Codigo'])
+        mejor_opcion = pd.DataFrame({'Codigo': list(codigo_barras_unicos)})
+
+        nombres_df = dataframes[0][['Codigo', 'Nombre Producto']]
+        for df in dataframes:
+            mejor_precio = df.groupby('Codigo')['Precio'].min().reset_index()
+            mejor_opcion = mejor_opcion.merge(mejor_precio, on='Codigo', suffixes=('', f'_{df["Archivo"].iloc[0]}'))
+
+        mejor_opcion.rename(columns={'Precio': 'Barracas'}, inplace=True)
+
+        for df in dataframes:
+            mejor_opcion.rename(columns={f'Precio_{df["Archivo"].iloc[0]}': f'Precio_{df["Archivo"].iloc[0]}'}, inplace=True)
+
+        mejor_opcion = mejor_opcion.merge(nombres_df, on='Codigo')
+
+        BaseTxt = pd.read_csv(archivo_txt, sep='\t', header=None)
+        BaseTxt.columns = ['Codigo', 'Producto', 'Condicion', 'CantidadDeseada', 'Cantidad']
+        BaseTxt = BaseTxt[BaseTxt['Codigo'].str.isnumeric()]
+        BaseTxt["Codigo"] = BaseTxt["Codigo"].astype("int64")
+
+        mejor_opcion['Recomendado'] = mejor_opcion[['Barracas', 'Precio_Cofarsur', 'Precio_Del Sud']].idxmin(axis=1)
+        mejor_opcion['Recomendado'] = mejor_opcion['Recomendado'].str.replace('Precio_', '')
+        mejor_opcion['Codigo'] = mejor_opcion['Codigo'].astype('int64')
+
+        mejor_opcion_filtrado = pd.merge(mejor_opcion, BaseTxt, on="Codigo", how="inner")
+
+        return mejor_opcion_filtrado.to_csv(index=False)
+    
+    except Exception as e:
+        return str(e)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -20,43 +66,23 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
-        barracas_csv = request.files.get('barracas_csv')
-        cofarsur_csv = request.files.get('cofarsur_csv')
-        sud_csv = request.files.get('sud_csv')
-        txt_file = request.files.get('txt_file')
+        archivos_csv = {
+            'barracas.csv': request.files['barracas_csv'],
+            'cofarsur.csv': request.files['cofarsur_csv'],
+            'sud.csv': request.files['sud_csv']
+        }
+        archivo_txt = request.files['txt_file']
+        entry_descuentos = {
+            'barracas.csv': float(request.form.get('barracas_discount', 0)),
+            'cofarsur.csv': float(request.form.get('cofarsur_discount', 0)),
+            'sud.csv': float(request.form.get('sud_discount', 0))
+        }
 
-        barracas_discount = float(request.form.get('barracas_discount', 0)) / 100
-        cofarsur_discount = float(request.form.get('cofarsur_discount', 0)) / 100
-        sud_discount = float(request.form.get('sud_discount', 0)) / 100
+        resultado = procesar_datos(archivos_csv, archivo_txt, entry_descuentos)
 
-        if barracas_csv and allowed_file(barracas_csv.filename):
-            barracas_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'barracas.csv'))
-            apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'barracas.csv'), barracas_discount)  
-        if cofarsur_csv and allowed_file(cofarsur_csv.filename):
-            cofarsur_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur.csv'))
-            apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'cofarsur.csv'), cofarsur_discount)
-        if sud_csv and allowed_file(sud_csv.filename):
-            sud_csv.save(os.path.join(app.config['UPLOAD_FOLDER'], 'sud.csv'))
-            apply_discount(os.path.join(app.config['UPLOAD_FOLDER'], 'sud.csv'), sud_discount)
-        if txt_file and allowed_file(txt_file.filename):
-            txt_file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'archivo.txt'))
-
-        return jsonify({'message': 'Archivos subidos exitosamente!'})
+        return send_file(resultado, as_attachment=True, attachment_filename='resultado.csv')
     except Exception as e:
         return jsonify({'error': str(e)})
-
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'csv', 'txt'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def apply_discount(filepath, discount):
-    try:
-        df = pd.read_csv(filepath)
-        if 'precios' in df.columns:
-            df['precios'] = df['precios'] * (1 - discount)
-            df.to_csv(filepath, index=False)
-    except Exception as e:
-        print(f"Error applying discount: {e}")
 
 @app.route('/download/<filename>', methods=['GET'])
 def download(filename):
